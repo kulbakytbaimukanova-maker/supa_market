@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Панель управления | SUPA</title>
+    <style>
+        :root { --orange: #FF8C00; --red: #ff4757; --bg: #f4f6f9; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 40px; margin: 0; }
+        
+        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .admin-card { background: white; padding: 25px; border-radius: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.05); }
+
+        /* Поиск и Кнопки */
+        .controls { display: flex; gap: 15px; margin-bottom: 20px; }
+        #userSearch { 
+            flex-grow: 1; padding: 12px 20px; border: 2px solid #eee; 
+            border-radius: 12px; outline: none; transition: 0.3s;
+        }
+        #userSearch:focus { border-color: var(--orange); }
+
+        .btn { 
+            padding: 12px 20px; border-radius: 12px; border: none; 
+            cursor: pointer; font-weight: bold; transition: 0.2s; 
+        }
+        .btn-add { background: var(--orange); color: white; }
+        .btn-ban { background: #ffeaea; color: var(--red); font-size: 12px; }
+        .btn-ban:hover { background: var(--red); color: white; }
+
+        /* Таблица */
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 15px; color: #8e8e93; font-size: 13px; text-transform: uppercase; }
+        td { padding: 15px; border-top: 1px solid #f0f0f0; }
+        .user-info { display: flex; align-items: center; gap: 10px; }
+        .user-pic { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; }
+
+        /* Скрытая форма добавления (простой вариант) */
+        #addProductForm { 
+            display: none; position: fixed; top: 50%; left: 50%; 
+            transform: translate(-50%, -50%); background: white; 
+            padding: 30px; border-radius: 20px; box-shadow: 0 0 100px rgba(0,0,0,0.2);
+            z-index: 100; width: 300px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="admin-card">
+    <div class="admin-header">
+        <h1>Управление SUPA</h1>
+        <button class="btn btn-add" onclick="toggleForm()">+ Добавить товар</button>
+    </div>
+
+    <div class="controls">
+        <input type="text" id="userSearch" placeholder="Поиск по никнейму..." onkeyup="filterUsers()">
+    </div>
+
+    <table id="usersTable">
+        <thead>
+            <tr>
+                <th>Пользователь</th>
+                <th>Email</th>
+                <th>Баланс</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr class="user-row">
+                <td class="user-info">
+                    <img src="{{ user.picture }}" class="user-pic">
+                    <span class="username"><strong>{{ user.username }}</strong></span>
+                </td>
+                <td>{{ user.email }}</td>
+                <td><span style="color: #2ed573; font-weight: 800;">{{ user.balance }}$</span></td>
+                <td>
+                    <form action="/admin/ban/{{ user.username }}" method="post" style="display:inline;">
+                        <button type="submit" class="btn btn-ban" onclick="return confirm('Забанить {{ user.username }}?')">Блокировка</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div id="addProductForm">
+    <h3>Новый товар</h3>
+    <form action="/admin/add_product" method="post">
+        <input type="text" name="name" placeholder="Название (напр. Roblox)" required style="width:100%; margin-bottom:10px; padding:10px; border-radius:8px; border:1px solid #ddd;">
+        <input type="text" name="image_url" placeholder="Ссылка на иконку" required style="width:100%; margin-bottom:15px; padding:10px; border-radius:8px; border:1px solid #ddd;">
+        <button type="submit" class="btn btn-add" style="width:100%">Опубликовать</button>
+        <button type="button" onclick="toggleForm()" style="width:100%; background:none; border:none; margin-top:10px; color:#888; cursor:pointer;">Отмена</button>
+    </form>
+</div>
+
+<script>
+    // Поиск по таблице
+    function filterUsers() {
+        let input = document.getElementById('userSearch').value.toLowerCase();
+        let rows = document.querySelectorAll('.user-row');
+        
+        rows.forEach(row => {
+            let username = row.querySelector('.username').innerText.toLowerCase();
+            if (username.includes(input)) {
+                row.style.display = "";
+            } else {
+                row.style.display = "none";
+            }
+        });
+    }
+
+    // Показать/скрыть форму
+    function toggleForm() {
+        let form = document.getElementById('addProductForm');
+        form.style.display = (form.style.display === 'block') ? 'none' : 'block';
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Настройка профиля | SUPA</title>
+    <style>
+        :root { 
+            --orange: #FF8C00; 
+            --bg: #f4f6f9; 
+            --text: #1c2b3e; 
+            --white: #ffffff;
+        }
+
+        body { 
+            background: var(--bg); 
+            /* Легкий градиент на фоне для глубины */
+            background: radial-gradient(circle at top left, #fff5e6, var(--bg));
+            font-family: 'Segoe UI', sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+        }
+
+        .setup-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(15px); /* Эффект стекла */
+            padding: 40px;
+            border-radius: 30px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.08);
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+
+        /* Стиль для блока аватарки */
+        .avatar-picker {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 25px;
+            cursor: pointer; /* Чтобы было понятно, что кликабельно */
+            transition: 0.3s;
+        }
+
+        .avatar-picker:hover {
+            transform: scale(1.03);
+        }
+
+        .avatar-picker img {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            border: 5px solid white;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            object-fit: cover;
+            background: #eee; /* Фон, пока грузится */
+        }
+
+        /* Кнопка "изменить" поверх аватарки */
+        .change-badge {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            background: var(--orange);
+            color: white;
+            font-size: 11px;
+            padding: 5px 10px;
+            border-radius: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 10px rgba(255, 140, 0, 0.3);
+        }
+
+        h2 { margin-bottom: 10px; color: var(--text); font-size: 24px; font-weight: 800; }
+        p { color: #8e8e93; font-size: 14px; margin-bottom: 30px; line-height: 1.5; }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .input-group span {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--orange);
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 16px 16px 16px 40px;
+            border: 2px solid #eef0f2;
+            border-radius: 16px;
+            font-size: 16px;
+            outline: none;
+            box-sizing: border-box;
+            transition: 0.3s;
+            background: rgba(255,255,255,0.5);
+        }
+
+        input[type="text"]:focus { 
+            border-color: var(--orange); 
+            background: white;
+            box-shadow: 0 0 0 4px rgba(255,140,0,0.1); 
+        }
+
+        button {
+            background: var(--orange);
+            color: white;
+            border: none;
+            padding: 18px;
+            border-radius: 18px;
+            font-weight: 800;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            transition: 0.3s;
+            box-shadow: 0 8px 20px rgba(255, 140, 0, 0.2);
+        }
+
+        button:hover { 
+            transform: translateY(-3px); 
+            box-shadow: 0 12px 25px rgba(255,140,0,0.3); 
+        }
+    </style>
+</head>
+<body>
+
+    <div class="setup-card">
+        
+        <form action="/register" method="post" enctype="multipart/form-data">
+            
+            <div class="avatar-picker" onclick="document.getElementById('file-input').click()">
+                <img id="avatar-preview" src="{{ request.session.get('user_picture') }}" alt="Avatar">
+                <div class="change-badge">Своё фото</div>
+                
+                <input type="file" id="file-input" name="profile_pic" accept="image/*" style="display: none;" onchange="previewImage(event)">
+            </div>
+
+            <h2>Почти готово!</h2>
+            <p>Выбери уникальный никнейм и, если хочешь, загрузи своё фото профиля.</p>
+
+            <div class="input-group">
+                <span>@</span>
+                <input type="text" name="username" placeholder="твой_ник" required minlength="3" maxlength="15" pattern="^[a-zA-Z0-9_]+$" title="Только латинские буквы, цифры и нижнее подчеркивание">
+            </div>
+            
+            <button type="submit">Создать аккаунт</button>
+        </form>
+        
+    </div>
+
+    <script>
+        function previewImage(event) {
+            const reader = new FileReader();
+            reader.onload = function() {
+                const output = document.getElementById('avatar-preview');
+                output.src = reader.result; // Меняем src картинки на выбранный файл
+            };
+            reader.readAsDataURL(event.target.files[0]);
+        }
+    </script>
+
+</body>
+</html>

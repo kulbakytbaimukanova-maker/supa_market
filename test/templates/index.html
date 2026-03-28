@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUPA | Маркет приложений</title>
+    <style>
+        :root { 
+            --orange: #FF8C00; 
+            --bg: #f4f6f9; 
+            --text: #1c2b3e; 
+            --grey: #8e8e93;
+            --white: #ffffff;
+            --border: #eef0f2;
+        }
+
+        a { text-decoration: none; color: inherit; }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+
+        /* --- ШАПКА ПК --- */
+        .header-pc {
+            background: var(--white);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+            display: none;
+        }
+
+        .header-flex { display: flex; justify-content: space-between; align-items: center; height: 70px; }
+        .logo { font-size: 30px; font-weight: 900; color: var(--orange); letter-spacing: -1px; }
+
+        .search-wrapper { flex-grow: 1; margin: 0 40px; max-width: 550px; position: relative; }
+        .search-wrapper input {
+            width: 100%; padding: 12px 15px 12px 45px; border-radius: 14px;
+            border: 1px solid var(--border); background: #f8f9fb; outline: none; font-size: 15px;
+        }
+        .search-wrapper::before { content: '🔍'; position: absolute; left: 15px; top: 50%; transform: translateY(-50%); opacity: 0.4; }
+
+        .user-nav { display: flex; align-items: center; gap: 20px; }
+        .money { background: #fff5e6; padding: 10px 18px; border-radius: 12px; font-weight: 800; border: 1px solid #ffe0b3; }
+        
+        .avatar-img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid var(--orange); transition: 0.2s; }
+        .avatar-img:hover { transform: scale(1.05); }
+        
+        .login-btn { background: var(--orange); color: white; padding: 10px 20px; border-radius: 12px; font-weight: bold; font-size: 14px; transition: 0.3s; }
+        .login-btn:hover { opacity: 0.9; transform: translateY(-2px); }
+
+        /* --- СЕТКА ТОВАРОВ --- */
+        .main-section { padding: 30px 0; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; }
+
+        .item-card {
+            background: white; border-radius: 24px; overflow: hidden;
+            transition: 0.3s; border: 1px solid transparent; display: block;
+        }
+        .item-card:hover { transform: translateY(-6px); border-color: var(--orange); box-shadow: 0 15px 30px rgba(255,140,0,0.12); }
+        .item-card img { width: 100%; height: 180px; object-fit: cover; }
+        .item-info { padding: 20px; }
+        .item-name { font-weight: 800; font-size: 20px; margin-bottom: 5px; color: var(--text); }
+        .item-link { color: var(--grey); font-size: 14px; }
+
+        /* --- АДАПТИВНОСТЬ --- */
+        @media (min-width: 1000px) { .header-pc { display: block; } .mobile-only { display: none; } }
+        @media (max-width: 999px) {
+            .header-pc { display: none; }
+            .mobile-header { background: white; padding: 15px; text-align: center; border-bottom: 1px solid var(--border); }
+            .mobile-bottom-nav {
+                display: flex; position: fixed; bottom: 0; left: 0; right: 0;
+                background: white; height: 75px; justify-content: space-around;
+                align-items: center; border-top: 1px solid var(--border); z-index: 1000;
+            }
+            .m-link { text-align: center; color: var(--grey); font-size: 12px; flex: 1; }
+            .m-link span { display: block; font-size: 24px; margin-bottom: 3px; }
+            .m-link.active { color: var(--orange); }
+            .main-section { padding-bottom: 100px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header-pc">
+        <div class="container">
+            <div class="header-flex">
+                <a href="/" class="logo">SUPA</a>
+                <div class="search-wrapper">
+                    <input type="text" placeholder="Поиск игр и приложений">
+                </div>
+                <div class="user-nav">
+                    {% if user %}
+                        <div class="money">0$</div> 
+                        <a href="/chats" style="font-size: 24px;">💬</a>
+                        <a href="/profile">
+                            <img src="{{ user.picture }}" class="avatar-img" title="Мой профиль">
+                        </a>
+                    {% else %}
+                        <a href="/login" class="login-btn">Войти</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="mobile-header mobile-only">
+        <a href="/" class="logo">SUPA</a>
+    </div>
+
+    <div class="container">
+        <main class="main-section">
+            {% if not apps %}
+                <div style="text-align: center; padding: 100px 0; opacity: 0.3;">
+                    <div style="font-size: 80px;">📦</div>
+                    <h2>Тут пока пусто</h2>
+                </div>
+            {% else %}
+                <div class="grid">
+                    {% for app in apps %}
+                    <a href="/app/{{ app.id }}" class="item-card">
+                        <img src="{{ app.image_url }}" alt="{{ app.name }}">
+                        <div class="item-info">
+                            <div class="item-name">{{ app.name }}</div>
+                            <div class="item-link">Перейти в маркет →</div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </main>
+    </div>
+
+    <nav class="mobile-bottom-nav mobile-only">
+        <a href="/" class="m-link active"><span>🏠</span>Дом</a>
+        <a href="#" class="m-link"><span>🔍</span>Поиск</a>
+        
+        {% if user %}
+            <a href="/chats" class="m-link"><span>💬</span>Чаты</a>
+            <a href="/profile" class="m-link"><span>👤</span>Профиль</a>
+        {% else %}
+            <a href="/login" class="m-link"><span>💬</span>Чаты</a>
+            <a href="/login" class="m-link"><span>👤</span>Войти</a>
+        {% endif %}
+    </nav>
+
+</body>
+</html>

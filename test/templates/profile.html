@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мой профиль | SUPA</title>
+    <style>
+        :root { --orange: #FF8C00; --bg: #f4f6f9; --text: #1c2b3e; }
+        body { 
+            background: var(--bg); 
+            background: radial-gradient(circle at top left, #fff5e6, var(--bg));
+            font-family: 'Segoe UI', sans-serif; margin: 0; 
+            display: flex; justify-content: center; align-items: center; min-height: 100vh;
+        }
+        .profile-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            padding: 40px;
+            border-radius: 35px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        .avatar {
+            width: 120px; height: 120px;
+            border-radius: 50%;
+            border: 5px solid white;
+            object-fit: cover;
+            margin-bottom: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        h1 { margin: 10px 0; font-size: 28px; color: var(--text); font-weight: 900; }
+        .username { color: var(--orange); font-weight: bold; font-size: 18px; margin-bottom: 20px; display: block; }
+        
+        .stats {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 15px; margin: 25px 0;
+        }
+        .stat-box {
+            background: rgba(255, 255, 255, 0.5);
+            padding: 15px; border-radius: 20px;
+            border: 1px solid white;
+        }
+        .stat-val { display: block; font-size: 20px; font-weight: 800; color: var(--text); }
+        .stat-label { font-size: 12px; color: #8e8e93; text-transform: uppercase; }
+
+        .btn {
+            display: block; width: 100%; padding: 15px;
+            margin-top: 10px; border-radius: 15px;
+            font-weight: bold; text-decoration: none; transition: 0.3s;
+        }
+        .btn-main { background: var(--orange); color: white; box-shadow: 0 8px 15px rgba(255,140,0,0.2); }
+        .btn-outline { border: 2px solid #eef0f2; color: #8e8e93; }
+        .btn:hover { transform: translateY(-3px); opacity: 0.9; }
+    </style>
+</head>
+<body>
+
+    <div class="profile-card">
+        <img src="{{ user.picture }}" class="avatar" alt="Avatar">
+        <h1>{{ user.username }}</h1>
+        <span class="username">@{{ user.username }}</span>
+
+        <div class="stats">
+            <div class="stat-box">
+                <span class="stat-val">{{ user.balance }}$</span>
+                <span class="stat-label">Баланс</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-val">0</span>
+                <span class="stat-label">Покупки</span>
+            </div>
+        </div>
+
+        <a href="/" class="btn btn-main">В маркет</a>
+        <a href="/logout" class="btn btn-outline">Выйти из аккаунта</a>
+    </div>
+
+</body>
+</html>
