@@ -35,7 +35,7 @@ def init_db():
     conn = sqlite3.connect("database.db")
     # Таблица товаров
     conn.execute('CREATE TABLE IF NOT EXISTS apps (id TEXT PRIMARY KEY, name TEXT, image_url TEXT)')
-    # Таблица юзеров (добавил поле is_admin на будущее)
+    # Таблица юзеров
     conn.execute('''CREATE TABLE IF NOT EXISTS users 
                     (email TEXT PRIMARY KEY, username TEXT UNIQUE, picture TEXT, 
                      balance REAL DEFAULT 0.0, is_admin INTEGER DEFAULT 0)''')
@@ -52,6 +52,7 @@ oauth.register(
     name='google',
     client_id=GOOGLE_CLIENT_ID,
     client_secret=GOOGLE_CLIENT_SECRET,
+    # ВОЗВРАЩЕНО: Оригинальный адрес конфигурации Google
     server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
     client_kwargs={'scope': 'openid email profile'}
 )
@@ -102,11 +103,10 @@ async def profile_page(request: Request, username: str):
         return HTMLResponse("<h2>Пользователь не найден</h2><a href='/'>На главную</a>", status_code=404)
     return templates.TemplateResponse("profile.html", {"request": request, "user": user_info})
 
-# --- АДМИН-ПАНЕЛЬ (НОВОЕ) ---
+# --- АДМИН-ПАНЕЛЬ ---
 
 @app.get("/admin", response_class=HTMLResponse)
 async def admin_panel(request: Request):
-    # Тут можно добавить проверку на email админа
     conn = sqlite3.connect("database.db")
     conn.row_factory = sqlite3.Row
     users = conn.execute("SELECT * FROM users").fetchall()
@@ -134,7 +134,8 @@ async def ban_user(username: str):
 
 @app.get("/auth/google")
 async def auth_google(request: Request):
-    redirect_uri = "http://127.0.0.1:8000/auth/callback" 
+    # ОБНОВЛЕНО: Твой реальный адрес на Render
+    redirect_uri = "https://supa-market.onrender.com/auth/callback" 
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
 @app.get("/auth/callback")
