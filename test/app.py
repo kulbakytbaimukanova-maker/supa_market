@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from authlib.integrations.starlette_client import OAuth
 
-# 1. Настройка путей (ВАЖНО ДЛЯ RENDER)
+# 1. Настройка путей
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
 STATIC_DIR = os.path.join(BASE_DIR, "static")
@@ -24,8 +24,9 @@ os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 app = FastAPI()
 
-# Подключаем сессии и шаблоны с правильными путями
+# Подключаем сессии
 app.add_middleware(SessionMiddleware, secret_key="EBANI_SUPA_SECRET_KEY")
+# Важно: Jinja2Templates инициализируем один раз
 templates = Jinja2Templates(directory=TEMPLATE_DIR)
 
 # Инициализация папок
@@ -37,9 +38,7 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 # 2. Инициализация Базы Данных
 def init_db():
     conn = sqlite3.connect(DB_PATH)
-    # Таблица товаров
     conn.execute('CREATE TABLE IF NOT EXISTS apps (id TEXT PRIMARY KEY, name TEXT, image_url TEXT)')
-    # Таблица юзеров
     conn.execute('''CREATE TABLE IF NOT EXISTS users 
                     (email TEXT PRIMARY KEY, username TEXT UNIQUE, picture TEXT, 
                      balance REAL DEFAULT 0.0, is_admin INTEGER DEFAULT 0)''')
@@ -79,11 +78,15 @@ async def home(request: Request):
             "name": request.session.get("user"),
             "picture": request.session.get("user_picture")
         }
-    return templates.TemplateResponse("index.html", {"request": request, "apps": apps, "user": user_data})
+    
+    # ИСПРАВЛЕНО: request передается первым аргументом
+    return templates.TemplateResponse(
+        request, "index.html", {"apps": apps, "user": user_data}
+    )
 
-@app.get("/login")
+@app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse(request, "login.html", {})
 
 @app.get("/logout")
 async def logout(request: Request):
@@ -98,7 +101,7 @@ async def profile_page(request: Request, username: str):
     conn.close()
     if not user_info:
         return HTMLResponse("<h2>Пользователь не найден</h2><a href='/'>На главную</a>", status_code=404)
-    return templates.TemplateResponse("profile.html", {"request": request, "user": user_info})
+    return templates.TemplateResponse(request, "profile.html", {"user": user_info})
 
 # --- АДМИН-ПАНЕЛЬ ---
 
@@ -108,7 +111,7 @@ async def admin_panel(request: Request):
     conn.row_factory = sqlite3.Row
     users = conn.execute("SELECT * FROM users").fetchall()
     conn.close()
-    return templates.TemplateResponse("admin.html", {"request": request, "users": users})
+    return templates.TemplateResponse(request, "admin.html", {"users": users})
 
 @app.post("/admin/add_product")
 async def add_product(name: str = Form(...), image_url: str = Form(...)):
@@ -154,7 +157,7 @@ async def auth_callback(request: Request):
 async def set_username_page(request: Request):
     if "user_email" not in request.session:
         return RedirectResponse(url="/login")
-    return templates.TemplateResponse("set_username.html", {"request": request})
+    return templates.TemplateResponse(request, "set_username.html", {})
 
 @app.post("/register")
 async def register(request: Request, username: str = Form(...), profile_pic: UploadFile = File(None)):
