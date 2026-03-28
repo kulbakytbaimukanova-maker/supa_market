@@ -11,28 +11,32 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from authlib.integrations.starlette_client import OAuth
 
+# 1. Настройка путей (ВАЖНО ДЛЯ RENDER)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+TEMPLATE_DIR = os.path.join(BASE_DIR, "templates")
+STATIC_DIR = os.path.join(BASE_DIR, "static")
+AVATARS_DIR = os.path.join(STATIC_DIR, "avatars")
+DB_PATH = os.path.join(BASE_DIR, "database.db")
+
 # Включаем логирование
 logging.basicConfig(level=logging.INFO)
-
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 app = FastAPI()
 
+# Подключаем сессии и шаблоны с правильными путями
 app.add_middleware(SessionMiddleware, secret_key="EBANI_SUPA_SECRET_KEY")
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory=TEMPLATE_DIR)
 
 # Инициализация папок
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-STATIC_DIR = os.path.join(BASE_DIR, "static")
-AVATARS_DIR = os.path.join(STATIC_DIR, "avatars")
-
 if not os.path.exists(AVATARS_DIR):
     os.makedirs(AVATARS_DIR, exist_ok=True)
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
+# 2. Инициализация Базы Данных
 def init_db():
-    conn = sqlite3.connect("database.db")
+    conn = sqlite3.connect(DB_PATH)
     # Таблица товаров
     conn.execute('CREATE TABLE IF NOT EXISTS apps (id TEXT PRIMARY KEY, name TEXT, image_url TEXT)')
     # Таблица юзеров
@@ -44,6 +48,7 @@ def init_db():
 
 init_db()
 
+# 3. Настройка Google Auth
 GOOGLE_CLIENT_ID = "527753630471-tbh1klclgcfu0acge29dfogdkh2sep0u.apps.googleusercontent.com"
 GOOGLE_CLIENT_SECRET = "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"
 
@@ -52,7 +57,6 @@ oauth.register(
     name='google',
     client_id=GOOGLE_CLIENT_ID,
     client_secret=GOOGLE_CLIENT_SECRET,
-    # ВОЗВРАЩЕНО: Оригинальный адрес конфигурации Google
     server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
     client_kwargs={'scope': 'openid email profile'}
 )
@@ -64,7 +68,7 @@ def is_logged_in(request: Request):
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    conn = sqlite3.connect("database.db")
+    conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     apps = conn.execute("SELECT * FROM apps").fetchall()
     conn.close()
@@ -86,16 +90,9 @@ async def logout(request: Request):
     request.session.clear()
     return RedirectResponse(url="/")
 
-@app.get("/profile")
-async def profile_redirect(request: Request):
-    username = request.session.get("user")
-    if not username:
-        return RedirectResponse(url="/login")
-    return RedirectResponse(url=f"/profile/{username}")
-
 @app.get("/profile/{username}", response_class=HTMLResponse)
 async def profile_page(request: Request, username: str):
-    conn = sqlite3.connect("database.db")
+    conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     user_info = conn.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
     conn.close()
@@ -107,7 +104,7 @@ async def profile_page(request: Request, username: str):
 
 @app.get("/admin", response_class=HTMLResponse)
 async def admin_panel(request: Request):
-    conn = sqlite3.connect("database.db")
+    conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     users = conn.execute("SELECT * FROM users").fetchall()
     conn.close()
@@ -116,16 +113,8 @@ async def admin_panel(request: Request):
 @app.post("/admin/add_product")
 async def add_product(name: str = Form(...), image_url: str = Form(...)):
     product_id = str(uuid.uuid4())[:8]
-    conn = sqlite3.connect("database.db")
+    conn = sqlite3.connect(DB_PATH)
     conn.execute("INSERT INTO apps (id, name, image_url) VALUES (?, ?, ?)", (product_id, name, image_url))
-    conn.commit()
-    conn.close()
-    return RedirectResponse(url="/admin", status_code=303)
-
-@app.post("/admin/ban/{username}")
-async def ban_user(username: str):
-    conn = sqlite3.connect("database.db")
-    conn.execute("DELETE FROM users WHERE username = ?", (username,))
     conn.commit()
     conn.close()
     return RedirectResponse(url="/admin", status_code=303)
@@ -134,7 +123,6 @@ async def ban_user(username: str):
 
 @app.get("/auth/google")
 async def auth_google(request: Request):
-    # ОБНОВЛЕНО: Твой реальный адрес на Render
     redirect_uri = "https://supa-market.onrender.com/auth/callback" 
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
@@ -146,7 +134,7 @@ async def auth_callback(request: Request):
         email = userinfo.get("email")
         picture = userinfo.get("picture")
 
-        conn = sqlite3.connect("database.db")
+        conn = sqlite3.connect(DB_PATH)
         res = conn.execute("SELECT username, picture FROM users WHERE email = ?", (email,)).fetchone()
         conn.close()
 
@@ -176,9 +164,7 @@ async def register(request: Request, username: str = Form(...), profile_pic: Upl
         return RedirectResponse(url="/login", status_code=303)
 
     clean_username = re.sub(r'\W+', '', username).lower()
-    if len(clean_username) < 3:
-        return HTMLResponse("Ник слишком короткий! <a href='/set_username'>Назад</a>")
-
+    
     final_picture = google_picture
     if profile_pic and profile_pic.filename:
         try:
@@ -192,7 +178,7 @@ async def register(request: Request, username: str = Form(...), profile_pic: Upl
             logging.error(f"File save error: {e}")
 
     try:
-        conn = sqlite3.connect("database.db")
+        conn = sqlite3.connect(DB_PATH)
         conn.execute("INSERT INTO users (email, username, picture, balance) VALUES (?, ?, ?, ?)", 
                      (email, clean_username, final_picture, 0.0))
         conn.commit()
@@ -200,15 +186,9 @@ async def register(request: Request, username: str = Form(...), profile_pic: Upl
         request.session["user"] = clean_username
         request.session["user_picture"] = final_picture
         return RedirectResponse(url=f"/profile/{clean_username}", status_code=303)
-    except sqlite3.IntegrityError:
-        return HTMLResponse("Этот ник уже занят! <a href='/set_username'>Назад</a>")
     except Exception as e:
         logging.error(f"Database error: {e}")
-        return HTMLResponse(f"Ошибка базы данных: {e}")
-
-@app.get("/chats")
-async def chats_page(request: Request):
-    return "Раздел чатов в разработке."
+        return HTMLResponse(f"Ошибка: {e}")
 
 @app.get("/app/{slug}")
 async def app_page(request: Request, slug: str):
